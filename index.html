@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>미드저니 이미지 참조 기능 완벽 비교</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Warm Neutral & Soft Accents (Stone-50 background, Stone-800 text, Soft Teal, Indigo, and Rose accents) -->
+    <!-- Application Structure Plan: A tabbed SPA interface was chosen to segment the three distinct features (Image Prompt, Cref, Sref) along with an Introduction, a Summary Comparison, and a Quiz. This structure reduces cognitive overload by allowing users to focus on one concept at a time. The 'Summary Comparison' includes an interactive Radar Chart for quick visual differentiation. The 'Weight Simulator' in each feature tab provides an interactive way to understand abstract parameters. -->
+    <!-- Visualization & Content Choices: 
+         1. Feature Explanations -> Interactive Sliders (HTML/JS) -> Goal: Inform/Change -> Allows users to see how parameter weights affect the output description.
+         2. Summary Comparison -> Radar Chart (Chart.js) -> Goal: Compare -> Visually contrasts the strengths of each feature (Form vs. Style vs. Creativity). NO SVG/Mermaid used. Wrapped in strict chart-container.
+         3. Practical Quiz -> Interactive Buttons (JS) -> Goal: Engage/Test -> Reinforces learning through active recall. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body { font-family: 'Pretendard', sans-serif; background-color: #fafaf9; color: #292524; }
+        .tab-content { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 24px; width: 24px; border-radius: 50%; background: #44403c; cursor: pointer; margin-top: -8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #d6d3d1; border-radius: 4px; }
+    </style>
+</head>
+<body class="antialiased text-stone-800 selection:bg-stone-300 selection:text-stone-900">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        
+        <nav class="w-full md:w-64 bg-stone-100 border-r border-stone-200 flex-shrink-0 p-6 shadow-inner z-10 md:sticky md:top-0 md:h-screen overflow-y-auto">
+            <h1 class="text-2xl font-bold mb-2 text-stone-800 tracking-tight">미드저니 마스터</h1>
+            <p class="text-sm text-stone-500 mb-8">이미지 참조 기능 완벽 비교</p>
+            
+            <ul class="space-y-2" id="nav-list">
+                <li><button onclick="switchTab('intro')" id="btn-intro" class="nav-btn w-full text-left px-4 py-3 rounded-lg font-medium transition-all duration-200 bg-stone-800 text-stone-50 shadow-md">🎯 1. 기능 도입</button></li>
+                <li><button onclick="switchTab('image-prompt')" id="btn-image-prompt" class="nav-btn w-full text-left px-4 py-3 rounded-lg font-medium text-stone-600 hover:bg-stone-200 transition-all duration-200">🖼️ 2. 이미지 프롬프트</button></li>
+                <li><button onclick="switchTab('cref')" id="btn-cref" class="nav-btn w-full text-left px-4 py-3 rounded-lg font-medium text-stone-600 hover:bg-stone-200 transition-all duration-200">👤 3. 캐릭터 레퍼런스</button></li>
+                <li><button onclick="switchTab('sref')" id="btn-sref" class="nav-btn w-full text-left px-4 py-3 rounded-lg font-medium text-stone-600 hover:bg-stone-200 transition-all duration-200">🎨 4. 스타일 레퍼런스</button></li>
+                <li><button onclick="switchTab('comparison')" id="btn-comparison" class="nav-btn w-full text-left px-4 py-3 rounded-lg font-medium text-stone-600 hover:bg-stone-200 transition-all duration-200">📊 5. 요약 비교</button></li>
+                <li><button onclick="switchTab('quiz')" id="btn-quiz" class="nav-btn w-full text-left px-4 py-3 rounded-lg font-medium text-stone-600 hover:bg-stone-200 transition-all duration-200">📝 6. 실전 퀴즈</button></li>
+            </ul>
+        </nav>
+
+        <main class="flex-1 p-6 md:p-12 lg:p-16 w-full max-w-5xl mx-auto overflow-x-hidden">
+            
+            <section id="intro" class="tab-content active">
+                <header class="mb-10">
+                    <span class="inline-block py-1 px-3 rounded-full bg-stone-200 text-stone-700 text-xs font-bold tracking-wider mb-4 uppercase">Introduction</span>
+                    <h2 class="text-4xl md:text-5xl font-extrabold text-stone-900 leading-tight mb-6">왜 텍스트 대신<br><span class="text-indigo-600">'이미지'</span>를 넣어야 할까요?</h2>
+                </header>
+                
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-stone-100 text-lg leading-relaxed text-stone-700">
+                    <p class="mb-6">이 섹션에서는 미드저니에서 텍스트 프롬프트의 한계를 극복하기 위해 왜 시각적 참조가 필요한지 그 배경을 설명합니다. 사용자는 AI 통제의 중요성을 이해하게 됩니다.</p>
+                    <p class="mb-4">AI에게 <strong class="text-stone-900 bg-stone-100 px-2 py-1 rounded">"잘생긴 남자 그려줘"</strong>나 <strong class="text-stone-900 bg-stone-100 px-2 py-1 rounded">"사이버펑크 느낌으로 그려줘"</strong>라고 텍스트로만 명령하면, AI의 상상력에 전적으로 의존하게 됩니다.</p>
+                    <p class="mb-6">우리가 원하는 <strong>정확한 구도, 똑같은 캐릭터, 특정 작가의 그림체</strong>를 얻기 위해서는 <strong>'시각적 기준(이미지)'</strong>을 제시해야 합니다.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+                        <div class="bg-indigo-50 p-6 rounded-xl border border-indigo-100 cursor-pointer hover:-translate-y-1 transition-transform" onclick="switchTab('image-prompt')">
+                            <div class="text-3xl mb-3">🖼️</div>
+                            <h3 class="font-bold text-indigo-900 mb-2">분위기/구도 믹스</h3>
+                            <p class="text-sm text-indigo-700">이미지 프롬프트 (Image Prompt)</p>
+                        </div>
+                        <div class="bg-teal-50 p-6 rounded-xl border border-teal-100 cursor-pointer hover:-translate-y-1 transition-transform" onclick="switchTab('cref')">
+                            <div class="text-3xl mb-3">👤</div>
+                            <h3 class="font-bold text-teal-900 mb-2">피사체 고정</h3>
+                            <p class="text-sm text-teal-700">캐릭터 레퍼런스 (--cref)</p>
+                        </div>
+                        <div class="bg-rose-50 p-6 rounded-xl border border-rose-100 cursor-pointer hover:-translate-y-1 transition-transform" onclick="switchTab('sref')">
+                            <div class="text-3xl mb-3">🎨</div>
+                            <h3 class="font-bold text-rose-900 mb-2">화풍 고정</h3>
+                            <p class="text-sm text-rose-700">스타일 레퍼런스 (--sref)</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="image-prompt" class="tab-content">
+                <header class="mb-10">
+                    <div class="text-4xl mb-4">🖼️</div>
+                    <h2 class="text-3xl md:text-4xl font-extrabold text-stone-900 mb-4">이미지 프롬프트 <span class="text-xl text-stone-500 font-normal ml-2">Image Prompt</span></h2>
+                    <p class="text-xl text-indigo-600 font-medium">"이 사진의 전반적인 분위기와 구도를 참고해서 새로 그려줘!"</p>
+                </header>
+
+                <div class="space-y-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 text-stone-700">
+                        <p class="mb-4">이 섹션은 가장 기초적인 이미지 참조 방식인 '이미지 프롬프트'를 다룹니다. 가중치(--iw) 조절에 따른 결과물의 변화를 시뮬레이터를 통해 직관적으로 체험할 수 있습니다.</p>
+                        <p>가장 전통적이고 기본적인 방식입니다. 이미지를 '영감(Inspiration)'의 도구로 사용합니다. 입력된 이미지의 색상, 구도, 피사체의 대략적인 느낌을 텍스트 프롬프트와 혼합합니다.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-stone-50 p-6 rounded-xl border border-stone-200">
+                            <h3 class="font-bold text-stone-900 mb-3 flex items-center">명령어 위치</h3>
+                            <p class="text-sm text-stone-600 mb-3">프롬프트의 <strong>가장 앞부분</strong>에 이미지 URL을 넣습니다.</p>
+                            <code class="block bg-stone-800 text-stone-100 p-3 rounded-lg text-sm break-all">
+                                <span class="text-indigo-400">[이미지 URL]</span> a man walking on the street --v 6.0
+                            </code>
+                        </div>
+                        <div class="bg-stone-50 p-6 rounded-xl border border-stone-200">
+                            <h3 class="font-bold text-stone-900 mb-3 flex items-center">장단점</h3>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex items-start"><span class="text-green-500 mr-2">✅</span> <span><strong>장점:</strong> 특정 구도나 추상적인 분위기를 믹스(Mix)할 때 매우 훌륭합니다.</span></li>
+                                <li class="flex items-start"><span class="text-red-500 mr-2">❌</span> <span><strong>단점:</strong> 원본의 '정확한 형태(얼굴, 디테일)'를 유지하지 못하고 심하게 변형됩니다.</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-indigo-50 p-8 rounded-2xl border border-indigo-100">
+                        <h3 class="font-bold text-indigo-900 mb-2">제어 파라미터 시뮬레이터: 이미지 가중치 (--iw)</h3>
+                        <p class="text-sm text-indigo-700 mb-6">숫자가 높을수록 원본 이미지와 더 비슷해집니다.</p>
+                        
+                        <div class="mb-8">
+                            <div class="flex justify-between text-sm font-medium text-indigo-900 mb-2">
+                                <span>텍스트 영향력 강함 (--iw 0.5)</span>
+                                <span>이미지 영향력 강함 (--iw 2.0)</span>
+                            </div>
+                            <input type="range" id="iw-slider" min="0.5" max="2.0" step="0.1" value="1.0" class="w-full">
+                            <div class="text-center mt-4">
+                                <span class="bg-indigo-600 text-white font-bold py-1 px-3 rounded-full text-lg shadow-sm" id="iw-value">--iw 1.0</span>
+                            </div>
+                        </div>
+
+                        <div class="h-12 bg-white rounded-full overflow-hidden flex shadow-inner border border-indigo-200">
+                            <div id="iw-bar-image" class="bg-indigo-400 h-full flex items-center justify-center text-xs font-bold text-white transition-all duration-300" style="width: 50%;">이미지 반영도</div>
+                            <div id="iw-bar-text" class="bg-stone-300 h-full flex items-center justify-center text-xs font-bold text-stone-700 transition-all duration-300" style="width: 50%;">텍스트 반영도</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="cref" class="tab-content">
+                <header class="mb-10">
+                    <div class="text-4xl mb-4">👤</div>
+                    <h2 class="text-3xl md:text-4xl font-extrabold text-stone-900 mb-4">캐릭터 레퍼런스 <span class="text-xl text-stone-500 font-normal ml-2">Character Reference</span></h2>
+                    <p class="text-xl text-teal-600 font-medium">"이 사진 속 인물의 '얼굴과 특징'을 그대로 고정해서 다른 행동을 하게 해줘!"</p>
+                </header>
+
+                <div class="space-y-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 text-stone-700">
+                        <p class="mb-4">이 섹션은 피사체의 정체성을 복제하는 혁신적인 기능인 '--cref'를 다룹니다. 캐릭터 가중치(--cw) 설정에 따라 얼굴만 복제할지, 의상까지 모두 복제할지 결정하는 원리를 인터랙티브하게 학습합니다.</p>
+                        <p>웹툰, 동화책, 인스타툰 제작의 혁명을 가져온 기능입니다. 피사체의 <strong>정체성(Identity)</strong>을 복제합니다. 원본 이미지에서 인물의 이목구비, 헤어스타일, 의상 특징을 추출하여 결과물에 강제로 고정합니다.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-stone-50 p-6 rounded-xl border border-stone-200">
+                            <h3 class="font-bold text-stone-900 mb-3 flex items-center">명령어 위치</h3>
+                            <p class="text-sm text-stone-600 mb-3">프롬프트 <strong>맨 뒤</strong>에 형태를 넣습니다.</p>
+                            <code class="block bg-stone-800 text-stone-100 p-3 rounded-lg text-sm break-all">
+                                a man drinking coffee <span class="text-teal-400">--cref [이미지 URL]</span>
+                            </code>
+                        </div>
+                        <div class="bg-stone-50 p-6 rounded-xl border border-stone-200">
+                            <h3 class="font-bold text-stone-900 mb-3 flex items-center">장단점</h3>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex items-start"><span class="text-green-500 mr-2">✅</span> <span><strong>장점:</strong> 동일한 캐릭터로 다양한 스토리텔링(희로애락 표정, 달리기 등)이 가능해집니다.</span></li>
+                                <li class="flex items-start"><span class="text-red-500 mr-2">❌</span> <span><strong>단점:</strong> 실사 사진이 아닌 일러스트의 경우 화풍이 미세하게 깨질 수 있습니다.</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-teal-50 p-8 rounded-2xl border border-teal-100">
+                        <h3 class="font-bold text-teal-900 mb-2">제어 파라미터 시뮬레이터: 캐릭터 가중치 (--cw)</h3>
+                        <p class="text-sm text-teal-700 mb-6">얼굴만 유지할지, 의상과 머리스타일 전체를 유지할지 결정합니다.</p>
+                        
+                        <div class="mb-8">
+                            <div class="flex justify-between text-sm font-medium text-teal-900 mb-2">
+                                <span>얼굴(이목구비)만 (--cw 0)</span>
+                                <span>모두 똑같이 (--cw 100)</span>
+                            </div>
+                            <input type="range" id="cw-slider" min="0" max="100" step="1" value="100" class="w-full">
+                            <div class="text-center mt-4">
+                                <span class="bg-teal-600 text-white font-bold py-1 px-3 rounded-full text-lg shadow-sm" id="cw-value">--cw 100</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-inner border border-teal-200 text-center transition-all duration-300" id="cw-description-box">
+                            <div class="text-4xl mb-2" id="cw-icon">👤👕💇‍♂️</div>
+                            <h4 class="font-bold text-teal-900 text-lg mb-1" id="cw-title">전체 복제 (기본값)</h4>
+                            <p class="text-stone-600 text-sm" id="cw-desc">얼굴, 머리스타일, <strong>의상까지</strong> 모두 원본과 똑같이 복제합니다.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="sref" class="tab-content">
+                <header class="mb-10">
+                    <div class="text-4xl mb-4">🎨</div>
+                    <h2 class="text-3xl md:text-4xl font-extrabold text-stone-900 mb-4">스타일 레퍼런스 <span class="text-xl text-stone-500 font-normal ml-2">Style Reference</span></h2>
+                    <p class="text-xl text-rose-600 font-medium">"이 사진에 있는 피사체는 무시하고, '그림체와 채색 기법'만 똑같이 베껴줘!"</p>
+                </header>
+
+                <div class="space-y-8">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 text-stone-700">
+                        <p class="mb-4">이 섹션은 이미지의 내용이 아닌 '미학적 톤앤매너'만을 추출하는 '--sref' 기능을 배웁니다. 스타일 가중치(--sw)가 화풍의 강도에 미치는 영향을 시각적으로 이해할 수 있습니다.</p>
+                        <p>일관된 브랜드 디자인이나 특유의 예술적 화풍을 유지할 때 사용하는 강력한 도구입니다. 원본 이미지의 내용(사람인지 동물인지)은 무시하고, 질감, 톤, 브러시 터치, 색감 등 <strong>'미학적 스타일'</strong>만 추출합니다.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-stone-50 p-6 rounded-xl border border-stone-200">
+                            <h3 class="font-bold text-stone-900 mb-3 flex items-center">명령어 위치</h3>
+                            <p class="text-sm text-stone-600 mb-3">프롬프트 <strong>맨 뒤</strong>에 형태를 넣습니다.</p>
+                            <code class="block bg-stone-800 text-stone-100 p-3 rounded-lg text-sm break-all">
+                                a futuristic city <span class="text-rose-400">--sref [이미지 URL]</span>
+                            </code>
+                        </div>
+                        <div class="bg-stone-50 p-6 rounded-xl border border-stone-200">
+                            <h3 class="font-bold text-stone-900 mb-3 flex items-center">장단점</h3>
+                            <ul class="space-y-3 text-sm">
+                                <li class="flex items-start"><span class="text-green-500 mr-2">✅</span> <span><strong>장점:</strong> 수채화, 3D 렌더링, 수묵화 등 텍스트로 설명하기 힘든 나만의 화풍을 일관되게 적용할 수 있습니다.</span></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-rose-50 p-8 rounded-2xl border border-rose-100">
+                        <h3 class="font-bold text-rose-900 mb-2">제어 파라미터 시뮬레이터: 스타일 가중치 (--sw)</h3>
+                        <p class="text-sm text-rose-700 mb-6">레퍼런스 이미지의 화풍을 얼마나 강하게 적용할지 결정합니다.</p>
+                        
+                        <div class="mb-8">
+                            <div class="flex justify-between text-sm font-medium text-rose-900 mb-2">
+                                <span>스타일 약함 (--sw 0)</span>
+                                <span>스타일 극단적 적용 (--sw 1000)</span>
+                            </div>
+                            <input type="range" id="sw-slider" min="0" max="1000" step="10" value="100" class="w-full">
+                            <div class="text-center mt-4">
+                                <span class="bg-rose-600 text-white font-bold py-1 px-3 rounded-full text-lg shadow-sm" id="sw-value">--sw 100</span>
+                            </div>
+                        </div>
+
+                        <div class="relative h-24 bg-white rounded-xl shadow-inner border border-rose-200 overflow-hidden">
+                            <div class="absolute inset-0 flex items-center justify-center text-stone-400 font-bold z-0">기본 미드저니 스타일</div>
+                            <div id="sw-overlay" class="absolute inset-0 bg-gradient-to-r from-rose-300 via-fuchsia-300 to-indigo-300 opacity-20 transition-opacity duration-300 z-10 flex items-center justify-center">
+                                <span class="bg-white/80 text-rose-900 px-3 py-1 rounded-md text-sm font-bold shadow-sm" id="sw-text">기본 화풍 적용 (100)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="comparison" class="tab-content">
+                <header class="mb-10">
+                    <div class="text-4xl mb-4">📊</div>
+                    <h2 class="text-3xl md:text-4xl font-extrabold text-stone-900 mb-4">한눈에 보는 요약 비교</h2>
+                    <p class="text-xl text-stone-600 font-medium">세 가지 기능의 핵심 차이를 정리합니다. (핵심 암기!)</p>
+                </header>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 mb-10">
+                    <p class="text-stone-700 mb-6">이 섹션은 앞서 배운 세 가지 기능의 특성을 비교 분석합니다. 하단의 레이더 차트(Radar Chart)는 각 기능이 '형태 유지력', '화풍 유지력', '창의적 변형', '사용 빈도' 측면에서 어떤 강점을 지니는지 시각적으로 대조하여 보여줍니다.</p>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-stone-100 text-stone-800 text-sm uppercase tracking-wider">
+                                    <th class="p-4 rounded-tl-xl">구분</th>
+                                    <th class="p-4">1. 이미지 프롬프트</th>
+                                    <th class="p-4">2. 캐릭터 레퍼런스 (--cref)</th>
+                                    <th class="p-4 rounded-tr-xl">3. 스타일 레퍼런스 (--sref)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-sm text-stone-700 divide-y divide-stone-100">
+                                <tr class="hover:bg-stone-50 transition-colors">
+                                    <td class="p-4 font-bold text-stone-900 bg-white">목적</td>
+                                    <td class="p-4 text-indigo-700 font-medium bg-indigo-50/30">전체적인 영감 (구도/느낌 믹스)</td>
+                                    <td class="p-4 text-teal-700 font-medium bg-teal-50/30">피사체 고정 (캐릭터 일관성)</td>
+                                    <td class="p-4 text-rose-700 font-medium bg-rose-50/30">화풍 고정 (그림체 일관성)</td>
+                                </tr>
+                                <tr class="hover:bg-stone-50 transition-colors">
+                                    <td class="p-4 font-bold text-stone-900 bg-white">명령어 위치</td>
+                                    <td class="p-4">프롬프트 <strong>맨 앞</strong> (URL text)</td>
+                                    <td class="p-4">프롬프트 <strong>맨 뒤</strong> (--cref URL)</td>
+                                    <td class="p-4">프롬프트 <strong>맨 뒤</strong> (--sref URL)</td>
+                                </tr>
+                                <tr class="hover:bg-stone-50 transition-colors">
+                                    <td class="p-4 font-bold text-stone-900 bg-white">파라미터</td>
+                                    <td class="p-4">--iw (0.5 ~ 2.0)</td>
+                                    <td class="p-4">--cw (0 ~ 100)</td>
+                                    <td class="p-4">--sw (0 ~ 1000)</td>
+                                </tr>
+                                <tr class="hover:bg-stone-50 transition-colors">
+                                    <td class="p-4 font-bold text-stone-900 bg-white">추출 요소</td>
+                                    <td class="p-4">이미지의 <strong>종합적인 형태와 분위기</strong></td>
+                                    <td class="p-4">인물의 <strong>얼굴, 머리, 의상</strong></td>
+                                    <td class="p-4">이미지의 <strong>색감, 질감, 화풍</strong></td>
+                                </tr>
+                                <tr class="hover:bg-stone-50 transition-colors">
+                                    <td class="p-4 font-bold text-stone-900 bg-white rounded-bl-xl">실무 활용 예시</td>
+                                    <td class="p-4">두 이미지를 합성하거나, 독특한 구도를 참고할 때</td>
+                                    <td class="p-4"><strong>인스타툰, 동화책</strong> 등 동일 인물이 계속 나와야 할 때</td>
+                                    <td class="p-4 rounded-br-xl"><strong>브랜드 가이드라인, 시리즈 포스터</strong> 등 톤앤매너를 맞출 때</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white p-8 rounded-2xl shadow-sm border border-stone-100 flex flex-col items-center">
+                    <h3 class="font-bold text-xl text-stone-900 mb-6">기능별 특성 분석 차트</h3>
+                    <div class="chart-container">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <section id="quiz" class="tab-content">
+                <header class="mb-10">
+                    <div class="text-4xl mb-4">📝</div>
+                    <h2 class="text-3xl md:text-4xl font-extrabold text-stone-900 mb-4">실전 퀴즈</h2>
+                    <p class="text-xl text-stone-600 font-medium">배운 내용을 실제 상황에 적용하여 확인해봅시다.</p>
+                </header>
+
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-stone-100 mb-8 text-stone-700">
+                    <p>이 섹션은 퀴즈를 통해 사용자가 앞서 학습한 내용을 복습하고, 실제 프롬프팅 상황에서 어떤 참조 기능을 선택해야 할지 스스로 판단하는 능력을 기르기 위한 인터랙티브 테스트 공간입니다.</p>
+                </div>
+
+                <div class="space-y-6" id="quiz-container">
+                    
+                    <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm transition-all" id="q1-box">
+                        <h3 class="font-bold text-lg text-stone-900 mb-3"><span class="text-indigo-600 mr-2">상황 1.</span> 동화책 캐릭터 일관성</h3>
+                        <p class="text-stone-700 mb-6">나는 지금 동화책을 만들고 있습니다. 주인공 꼬마가 1페이지에서는 웃고 있고, 2페이지에서는 울고 있게 만들고 싶습니다. 어떤 기능을 써야 할까요?</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <button onclick="answerQuiz(1, 'img')" class="py-3 px-4 border border-stone-200 rounded-lg hover:bg-stone-50 font-medium transition-colors">이미지 프롬프트</button>
+                            <button onclick="answerQuiz(1, 'cref')" class="py-3 px-4 border border-stone-200 rounded-lg hover:bg-stone-50 font-medium transition-colors">캐릭터 레퍼런스 (--cref)</button>
+                            <button onclick="answerQuiz(1, 'sref')" class="py-3 px-4 border border-stone-200 rounded-lg hover:bg-stone-50 font-medium transition-colors">스타일 레퍼런스 (--sref)</button>
+                        </div>
+                        <div id="q1-feedback" class="mt-4 hidden p-4 rounded-lg bg-stone-50 border border-stone-200 text-sm font-bold"></div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm transition-all" id="q2-box">
+                        <h3 class="font-bold text-lg text-stone-900 mb-3"><span class="text-rose-600 mr-2">상황 2.</span> 특유의 화풍 복제</h3>
+                        <p class="text-stone-700 mb-6">핀터레스트에서 정말 마음에 드는 '파스텔 톤의 몽환적인 수채화' 풍경 사진을 찾았습니다. 이 그림체 느낌 그대로 '우주선'을 그리고 싶습니다. 어떤 기능을 써야 할까요?</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <button onclick="answerQuiz(2, 'img')" class="py-3 px-4 border border-stone-200 rounded-lg hover:bg-stone-50 font-medium transition-colors">이미지 프롬프트</button>
+                            <button onclick="answerQuiz(2, 'cref')" class="py-3 px-4 border border-stone-200 rounded-lg hover:bg-stone-50 font-medium transition-colors">캐릭터 레퍼런스 (--cref)</button>
+                            <button onclick="answerQuiz(2, 'sref')" class="py-3 px-4 border border-stone-200 rounded-lg hover:bg-stone-50 font-medium transition-colors">스타일 레퍼런스 (--sref)</button>
+                        </div>
+                        <div id="q2-feedback" class="mt-4 hidden p-4 rounded-lg bg-stone-50 border border-stone-200 text-sm font-bold"></div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm transition-all" id="q3-box">
+                        <h3 class="font-bold text-lg text-stone-900 mb-3"><span class="text-teal-600 mr-2">상황 3.</span> 심화 응용</h3>
+                        <p class="text-stone-700 mb-6">위 상황 1의 꼬마 캐릭터를 유지하면서, 상황 2의 파스텔 톤 수채화 그림체로 그리고 싶다면 어떻게 해야 할까요?</p>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <button onclick="answerQuiz(3, 'both')" class="py-3 px-4 border border-stone-200 rounded-lg hover:bg-stone-50 font-medium transition-colors">혼합 사용 (--cref URL --sref URL)</button>
+                            <button onclick="answerQuiz(3, 'img')" class="py-3 px-4 border border-stone-200 rounded-lg hover:bg-stone-50 font-medium transition-colors">이미지 프롬프트에 둘 다 넣기</button>
+                            <button onclick="answerQuiz(3, 'impossible')" class="py-3 px-4 border border-stone-200 rounded-lg hover:bg-stone-50 font-medium transition-colors">불가능하다</button>
+                        </div>
+                        <div id="q3-feedback" class="mt-4 hidden p-4 rounded-lg bg-stone-50 border border-stone-200 text-sm font-bold"></div>
+                    </div>
+
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        const tabs = ['intro', 'image-prompt', 'cref', 'sref', 'comparison', 'quiz'];
+        
+        function switchTab(tabId) {
+            tabs.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.remove('active');
+                
+                const btn = document.getElementById(`btn-${id}`);
+                if(btn) {
+                    btn.classList.remove('bg-stone-800', 'text-stone-50', 'shadow-md');
+                    btn.classList.add('text-stone-600', 'hover:bg-stone-200');
+                }
+            });
+
+            const activeEl = document.getElementById(tabId);
+            if(activeEl) activeEl.classList.add('active');
+            
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            if(activeBtn) {
+                activeBtn.classList.remove('text-stone-600', 'hover:bg-stone-200');
+                activeBtn.classList.add('bg-stone-800', 'text-stone-50', 'shadow-md');
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if(tabId === 'comparison') {
+                initChart();
+            }
+        }
+
+        const iwSlider = document.getElementById('iw-slider');
+        const iwValue = document.getElementById('iw-value');
+        const iwBarImage = document.getElementById('iw-bar-image');
+        const iwBarText = document.getElementById('iw-bar-text');
+
+        iwSlider.addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value);
+            iwValue.textContent = `--iw ${val.toFixed(1)}`;
+            
+            const min = 0.5;
+            const max = 2.0;
+            const percentage = ((val - min) / (max - min)) * 100;
+            
+            const visualPercent = 20 + (percentage * 0.6); 
+            
+            iwBarImage.style.width = `${visualPercent}%`;
+            iwBarText.style.width = `${100 - visualPercent}%`;
+        });
+
+        const cwSlider = document.getElementById('cw-slider');
+        const cwValue = document.getElementById('cw-value');
+        const cwIcon = document.getElementById('cw-icon');
+        const cwTitle = document.getElementById('cw-title');
+        const cwDesc = document.getElementById('cw-desc');
+
+        cwSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            cwValue.textContent = `--cw ${val}`;
+            
+            if (val === 0) {
+                cwIcon.textContent = "👤";
+                cwTitle.textContent = "얼굴(이목구비)만 복제";
+                cwDesc.innerHTML = "캐릭터가 다른 옷을 입게 하고 싶을 때 사용합니다. <strong>얼굴 특징만</strong> 유지합니다.";
+            } else if (val < 50) {
+                cwIcon.textContent = "👤👕";
+                cwTitle.textContent = "부분 복제";
+                cwDesc.innerHTML = "얼굴과 체형 느낌은 유지하지만 의상의 변형을 어느정도 허용합니다.";
+            } else {
+                cwIcon.textContent = "👤👕💇‍♂️";
+                cwTitle.textContent = "전체 복제 (기본값)";
+                cwDesc.innerHTML = "얼굴, 머리스타일, <strong>의상까지</strong> 모두 원본과 똑같이 복제합니다.";
+            }
+        });
+
+        const swSlider = document.getElementById('sw-slider');
+        const swValue = document.getElementById('sw-value');
+        const swOverlay = document.getElementById('sw-overlay');
+        const swText = document.getElementById('sw-text');
+
+        swSlider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            swValue.textContent = `--sw ${val}`;
+            
+            const opacity = val / 1000;
+            swOverlay.style.opacity = Math.max(0.05, opacity);
+            
+            if (val < 100) {
+                swText.textContent = `미미한 화풍 적용 (${val})`;
+            } else if (val === 100) {
+                swText.textContent = `기본 화풍 적용 (${val})`;
+            } else if (val < 500) {
+                swText.textContent = `강한 화풍 적용 (${val})`;
+            } else {
+                swText.textContent = `극단적 화풍 적용 (${val})`;
+            }
+        });
+
+        const quizAnswers = {
+            1: { correct: 'cref', text: "정답: 캐릭터 레퍼런스 (--cref). 동일 인물이 계속 나와야 하므로 피사체를 고정해야 합니다." },
+            2: { correct: 'sref', text: "정답: 스타일 레퍼런스 (--sref). 풍경의 내용(피사체)은 버리고 화풍만 가져와야 합니다." },
+            3: { correct: 'both', text: "정답: 혼합 사용 (--cref URL --sref URL). 미드저니는 캐릭터 고정과 화풍 고정을 동시에 사용할 수 있습니다!" }
+        };
+
+        function answerQuiz(qNum, selected) {
+            const feedbackEl = document.getElementById(`q${qNum}-feedback`);
+            const boxEl = document.getElementById(`q${qNum}-box`);
+            
+            feedbackEl.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'border-green-300', 'bg-red-100', 'text-red-800', 'border-red-300');
+            
+            if (selected === quizAnswers[qNum].correct) {
+                feedbackEl.classList.add('bg-green-100', 'text-green-800', 'border-green-300');
+                feedbackEl.innerHTML = `✅ ${quizAnswers[qNum].text}`;
+                boxEl.classList.add('border-green-300');
+            } else {
+                feedbackEl.classList.add('bg-red-100', 'text-red-800', 'border-red-300');
+                feedbackEl.innerHTML = `❌ 오답입니다. 다시 생각해보세요!`;
+                boxEl.classList.remove('border-green-300');
+            }
+            feedbackEl.classList.remove('hidden');
+        }
+
+        let chartInstance = null;
+        function initChart() {
+            if (chartInstance) return; 
+
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            
+            Chart.defaults.font.family = "'Pretendard', sans-serif";
+            Chart.defaults.color = '#57534e';
+
+            chartInstance = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: [
+                        ['형태 유지력', '(피사체 고정)'],
+                        ['화풍 유지력', '(스타일 일관성)'],
+                        ['창의적 변형', '(재해석 여지)'],
+                        ['텍스트 제어력', '(프롬프트 우선순위)'],
+                        ['사용 난이도', '(예측 가능성)']
+                    ],
+                    datasets: [{
+                        label: '이미지 프롬프트',
+                        data: [3, 4, 9, 8, 6],
+                        fill: true,
+                        backgroundColor: 'rgba(99, 102, 241, 0.2)', 
+                        borderColor: 'rgb(99, 102, 241)',
+                        pointBackgroundColor: 'rgb(99, 102, 241)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(99, 102, 241)'
+                    }, {
+                        label: '--cref (캐릭터)',
+                        data: [10, 3, 2, 4, 8],
+                        fill: true,
+                        backgroundColor: 'rgba(20, 184, 166, 0.2)', 
+                        borderColor: 'rgb(20, 184, 166)',
+                        pointBackgroundColor: 'rgb(20, 184, 166)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(20, 184, 166)'
+                    }, {
+                        label: '--sref (스타일)',
+                        data: [1, 10, 5, 6, 9],
+                        fill: true,
+                        backgroundColor: 'rgba(225, 29, 72, 0.2)', 
+                        borderColor: 'rgb(225, 29, 72)',
+                        pointBackgroundColor: 'rgb(225, 29, 72)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgb(225, 29, 72)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    elements: {
+                        line: { borderWidth: 2 }
+                    },
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0, 0, 0, 0.1)' },
+                            grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                            pointLabels: {
+                                font: { size: 12, weight: 'bold' },
+                                color: '#44403c'
+                            },
+                            ticks: { display: false, min: 0, max: 10 }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20, font: { weight: 'bold' } } },
+                        tooltip: {
+                            backgroundColor: 'rgba(41, 37, 36, 0.9)',
+                            titleFont: { size: 14 },
+                            bodyFont: { size: 13 },
+                            padding: 12,
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.dataset.label + ': ' + context.formattedValue + '/10';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
